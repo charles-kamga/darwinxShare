@@ -1,0 +1,143 @@
+Étape 1 : Le Code "Kali Share V8 - Desktop Edition"
+On garde tout ton moteur Flask V7, mais on remplace la partie if __name__ == "__main__": par une interface graphique.
+Crée un nouveau fichier app_gui.py :
+code
+Python
+import os
+import socket
+import threading
+import webbrowser
+import mimetypes
+import shutil
+import tempfile
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
+from functools import wraps
+from flask import Flask, request, send_from_directory, render_template_string, Response, send_file
+from werkzeug.utils import secure_filename
+from werkzeug.serving import make_server
+
+# --- (ON GARDE TOUT LE CODE FLASK ET HTML IDENTIQUE À LA V7 ICI) ---
+# Copie-colle TOUT ton code HTML="..." et tes fonctions jusqu'à "if __name__..."
+# Je te remets juste le bloc de configuration rapide pour que ça marche
+# mais idéalement tu copies tout le haut de ton fichier précédent.
+
+app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 0
+ROOT_DIR = os.path.expanduser("~/Downloads")
+AUTH_USER = "admin"
+AUTH_PASS = "admin"
+
+# ... (INSÈRE ICI TOUT LE HTML V7 ET LES ROUTES FLASK V7) ...
+# ... (HTML = "...", routes @app.route...) ...
+# SI TU AS UN DOUTE, reprends ton fichier V7 complet, et remplace JUSTE 
+# la partie tout en bas (if __name__ == "__main__": ...) par ce qui suit :
+
+# --- NOUVELLE PARTIE : INTERFACE GRAPHIQUE (TKINTER) ---
+
+class ServerThread(threading.Thread):
+    """Thread pour faire tourner Flask sans bloquer la fenêtre"""
+    def __init__(self, app, host, port):
+        threading.Thread.__init__(self)
+        self.server = make_server(host, port, app)
+        self.ctx = app.app_context()
+        self.ctx.push()
+
+    def run(self):
+        self.server.serve_forever()
+
+    def shutdown(self):
+        self.server.shutdown()
+
+server_thread = None
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try: s.connect(('8.8.8.8', 80)); IP = s.getsockname()[0]
+    except: IP = '127.0.0.1'
+    finally: s.close()
+    return IP
+
+def start_server():
+    global server_thread, AUTH_USER, AUTH_PASS, ROOT_DIR
+    
+    # Récupérer les infos des champs
+    user = entry_user.get()
+    pwd = entry_pass.get()
+    
+    if not user or not pwd:
+        messagebox.showerror("Erreur", "Veuillez remplir le user et le mot de passe")
+        return
+
+    AUTH_USER = user
+    AUTH_PASS = pwd
+    ip = get_ip()
+    port = 8000
+    
+    btn_start.config(state="disabled", text="Serveur en ligne 🚀")
+    btn_stop.config(state="normal")
+    
+    # Affichage dans la console GUI
+    log_area.insert(tk.END, f"\n[+] Serveur démarré !\n")
+    log_area.insert(tk.END, f"[i] IP : http://{ip}:{port}\n")
+    log_area.insert(tk.END, f"[i] Login : {user} / {pwd}\n")
+    log_area.see(tk.END)
+    
+    # Lancement Flask dans un thread séparé
+    server_thread = ServerThread(app, "0.0.0.0", port)
+    server_thread.start()
+    
+    # Ouvrir le navigateur localement
+    webbrowser.open(f"http://127.0.0.1:{port}")
+
+def stop_server():
+    global server_thread
+    if server_thread:
+        log_area.insert(tk.END, "\n[!] Arrêt du serveur...\n")
+        server_thread.shutdown()
+        server_thread = None
+        
+    btn_start.config(state="normal", text="Démarrer le Serveur")
+    btn_stop.config(state="disabled")
+    log_area.insert(tk.END, "[!] Serveur arrêté.\n")
+
+# Configuration de la Fenêtre
+root = tk.Tk()
+root.title("Kali Share App")
+root.geometry("400x450")
+root.configure(bg="#1e293b")
+
+# Style rapide
+lbl_style = {"bg": "#1e293b", "fg": "white", "font": ("Arial", 10)}
+
+# Logo / Titre
+tk.Label(root, text="Kali Share V8", bg="#1e293b", fg="#38bdf8", font=("Impact", 20)).pack(pady=10)
+
+# Formulaire
+frame_form = tk.Frame(root, bg="#1e293b")
+frame_form.pack(pady=10)
+
+tk.Label(frame_form, text="Utilisateur :", **lbl_style).grid(row=0, column=0, padx=5, pady=5)
+entry_user = tk.Entry(frame_form)
+entry_user.insert(0, "admin")
+entry_user.grid(row=0, column=1, padx=5, pady=5)
+
+tk.Label(frame_form, text="Mot de passe :", **lbl_style).grid(row=1, column=0, padx=5, pady=5)
+entry_pass = tk.Entry(frame_form) # show="*" pour cacher si tu veux
+entry_pass.insert(0, "1234")
+entry_pass.grid(row=1, column=1, padx=5, pady=5)
+
+# Boutons
+btn_start = tk.Button(root, text="Démarrer le Serveur", bg="#22c55e", fg="white", font=("Arial", 12, "bold"), command=start_server)
+btn_start.pack(pady=10, ipadx=10, ipady=5)
+
+btn_stop = tk.Button(root, text="Arrêter", bg="#ef4444", fg="white", font=("Arial", 10), state="disabled", command=stop_server)
+btn_stop.pack(pady=5)
+
+# Zone de logs
+log_area = scrolledtext.ScrolledText(root, height=8, bg="black", fg="#00ff00", font=("Consolas", 9))
+log_area.pack(padx=10, pady=10, fill="both")
+log_area.insert(tk.END, "Bienvenue sur Kali Share Desktop.\nConfigurez et lancez le serveur.\n")
+
+root.mainloop()
+Enregistre ce fichier sous le nom main.py (c'est important pour la suite).

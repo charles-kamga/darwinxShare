@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DarwinxShare
+Comment=Serveur de partage de fichiers PC ↔ iPhone
+Exec=main.py
+Icon=icon
+Categories=Network;FileTransfer;
+Terminal=false
+StartupNotify=true
