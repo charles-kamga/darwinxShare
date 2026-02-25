@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>DarwinxShare</title>
+    <style>
+        :root {
+            --bg: #F2F2F7;
+            --bg2: #FFFFFF;
+            --bg3: #E5E5EA;
+            --text: #000;
+            --text2: #8E8E93;
+            --accent: #007AFF;
+            --green: #34C759;
+            --border: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding-bottom: 100px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(242, 242, 247, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 12px 16px 8px;
+            border-bottom: 0.5px solid var(--border);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .user-badge {
+            background: var(--bg3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .search-bar {
+            width: 100%;
+            background: var(--bg3);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 16px;
+            outline: none;
+        }
+
+        .nav-path {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: var(--bg3);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .path-text {
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .msg {
+            margin: 12px 16px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .msg.ok {
+            background: rgba(52, 199, 89, 0.12);
+            color: var(--green);
+        }
+
+        .msg.err {
+            background: rgba(255, 59, 48, 0.12);
+            color: #FF3B30;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 12px 16px;
+        }
+
+        .card {
+            background: var(--bg2);
+            border-radius: 16px;
+            padding: 14px 10px 10px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            border: 0.5px solid var(--border);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            transition: transform 0.15s;
+        }
+
+        .card:active {
+            transform: scale(0.94);
+        }
+
+        .icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .icon-svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        .filename {
+            font-size: 12px;
+            font-weight: 500;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .meta {
+            font-size: 11px;
+            color: var(--text2);
+            margin-top: 4px;
+        }
+
+        .zip-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #FFF;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .upload-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(242, 242, 247, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 12px 16px 28px;
+            border-top: 0.5px solid var(--border);
+        }
+
+        .hidden-input {
+            display: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: #FFF;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="header-title">DarwinxShare</div>
+            <span class="user-badge">{{ user }}</span>
+        </div>
+        <input type="text" class="search-bar" placeholder="🔍  Rechercher..." id="searchInput" oninput="filterGrid()">
+    </div>
+    <div class="nav-path">
+        {% if parent is not none %}<button class="nav-btn" onclick="location.href='/?path={{ parent }}'">←
+            Retour</button>{% endif %}
+        <span class="path-text">📂 /{{ path if path else 'Racine' }}</span>
+    </div>
+    {% if msg %}<div class="msg {{ type }}">{{ msg }}</div>{% endif %}
+
+    <div class="grid" id="fileGrid">
+        {% for item in items %}
+        {% if item.is_dir %}
+        <a href="/?path={{ item.path }}" class="card">
+            <div class="icon-box" style="background:rgba(0,122,255,0.12);">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="#007AFF">
+                    <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                </svg>
+            </div>
+            <div class="filename">{{ item.name }}</div>
+            <div class="meta">{{ item.count }} éléments</div>
+            <button class="zip-btn"
+                onclick="event.stopPropagation();event.preventDefault();window.location='/zip/{{ item.path }}'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="3">
+                    <path d="M12 17V3M12 17l5-5M12 17l-5-5M21 21H3" />
+                </svg>
+            </button>
+        </a>
+        {% elif item.is_video %}
+        <a href="/view/{{ item.path }}" class="card">
+            <div class="icon-box" style="background:rgba(0,122,255,0.12);">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="#007AFF">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+                </svg>
+            </div>
+            <div class="filename">{{ item.name }}</div>
+            <div class="meta">{{ item.size }} • Lire</div>
+            <button class="zip-btn"
+                onclick="event.stopPropagation();event.preventDefault();window.location='/download/{{ item.path }}'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="3">
+                    <path d="M12 17V3M12 17l5-5M12 17l-5-5M21 21H3" />
+                </svg>
+            </button>
+        </a>
+        {% else %}
+        <a href="/view/{{ item.path }}" class="card">
+            <div class="icon-box" style="background:rgba(0,122,255,0.1);">
+                {% if item.icon == '🖼️' %}<svg class="icon-svg" viewBox="0 0 24 24" fill="#34C759">
+                    <path
+                        d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                </svg>
+                {% elif item.icon == '🎵' %}<svg class="icon-svg" viewBox="0 0 24 24" fill="#FF2D55">
+                    <path
+                        d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" />
+                </svg>
+                {% else %}<svg class="icon-svg" viewBox="0 0 24 24" fill="#007AFF">
+                    <path
+                        d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>{% endif %}
+            </div>
+            <div class="filename">{{ item.name }}</div>
+            <div class="meta">{{ item.size }}</div>
+            <button class="zip-btn"
+                onclick="event.stopPropagation();event.preventDefault();window.location='/download/{{ item.path }}'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="3">
+                    <path d="M12 17V3M12 17l5-5M12 17l-5-5M21 21H3" />
+                </svg>
+            </button>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="upload-bar">
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <input type="file" name="file" multiple id="fileIn" class="hidden-input" onchange="this.value=null;">
+            <input type="hidden" name="path" id="uploadPath" value="{{ path }}">
+            <button type="button" class="btn-primary" onclick="document.getElementById('fileIn').click()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Ajouter des fichiers
+            </button>
+        </form>
+    </div>
+    <script>
+        function filterGrid() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.display = card.querySelector('.filename').innerText.toLowerCase().includes(input) ? '' : 'none';
+            });
+        }
+        document.getElementById('uploadForm').addEventListener('change', function (e) {
+            const inputField = document.getElementById('fileIn');
+            if (inputField.files.length > 0) {
+                const btn = document.querySelector('.btn-primary');
+                const pathVal = document.getElementById('uploadPath').value;
+                let formData = new FormData();
+                formData.append('path', pathVal);
+                for (let i = 0; i < inputField.files.length; i++) { formData.append('file', inputField.files[i]); }
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/', true);
+                xhr.upload.onprogress = function (e) {
+                    if (e.lengthComputable) {
+                        let pct = Math.round((e.loaded / e.total) * 100);
+                        btn.innerHTML = `Envoi... ${pct}%`;
+                        btn.style.background = `linear-gradient(90deg, #34C759 ${pct}%, #007AFF ${pct}%)`;
+                    }
+                };
+                xhr.onload = function () { if (xhr.status === 200) { location.reload(); } else { btn.innerHTML = "❌ Refusé"; btn.style.background = "#FF3B30"; setTimeout(() => location.reload(), 3000); } };
+                xhr.onerror = function () { btn.innerHTML = "❌ Erreur réseau"; btn.style.background = "#FF3B30"; setTimeout(() => location.reload(), 3000); };
+                btn.disabled = true;
+                xhr.send(formData);
+            }
+        });
+    </script>
+</body>
+
+</html>
