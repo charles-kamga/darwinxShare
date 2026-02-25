@@ -10,7 +10,7 @@
 - **6 thèmes visuels** sélectionnables depuis l'interface PC :
   - `iOS (Sombre)` *(par défaut)* — style iOS natif en mode nuit
   - `iOS (Clair)` — style iOS natif lumineux
-  - `iOS 18 Bento` — grille style Dynamic Island
+  - `iOS 18 Bento` — grille style Dynamic Island (principalement pour PC)
   - `macOS (Plastique)` — fenêtre façon Finder macOS
   - `Cyberpunk` — interface terminal hacker
   - `Classique` — UI originale épurée
