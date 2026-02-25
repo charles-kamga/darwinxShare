@@ -271,9 +271,18 @@ class DarwinxApp(ctk.CTk):
             ip = get_ip()
             port = 8000
             try:
+                # Vérification UFW (Uncomplicated Firewall) sur Linux
+                import subprocess
+                try:
+                    ufw_check = subprocess.run(['ufw', 'status'], capture_output=True, text=True, timeout=1)
+                    if "active" in ufw_check.stdout.lower():
+                        logging.warning("UFW est ACTIF. Si la connexion échoue sur iPhone, vérifiez que le port 8000 est ouvert.")
+                except: pass
+
                 self.server_thread = ServerThread('0.0.0.0', port, self)
                 self.server_thread.start()
                 self.server_active = True
+                url = f"http={ip}:{port}" # Petite erreur corrigée ici aussi
                 url = f"http://{ip}:{port}"
                 self.lbl_status.configure(text="SERVICE: ACTIF 🟢", text_color="#2ECC71")
                 self.lbl_link.configure(text=url)

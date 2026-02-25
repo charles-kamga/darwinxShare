@@ -92,10 +92,10 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# --- SÉCURITÉ : BLOCAGE IP APRÈS 3 ÉCHECS ---
+# --- SÉCURITÉ : BLOCAGE IP ASSOUPLI (Safari peut faire bcp de requêtes) ---
 FAILED_LOGINS = {}
-BAN_DURATION = 5 * 60   # 5 minutes
-MAX_FAILS = 3
+BAN_DURATION = 1 * 60   # 1 minute (plus souple)
+MAX_FAILS = 10         # 10 tentatives (Safari tape fort à la première connexion)
 
 
 # --- AUTHENTIFICATION ---
@@ -133,7 +133,8 @@ def check_auth(username, password):
 
 def authenticate():
     return Response('Connexion requise pour DarwinxShare', 401,
-                    {'WWW-Authenticate': 'Basic realm="Login"'})
+                    {'WWW-Authenticate': 'Basic realm="Login"',
+                     'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'})
 
 
 def requires_auth(f):
@@ -144,7 +145,13 @@ def requires_auth(f):
             return authenticate()
         ip = request.remote_addr or "0.0.0.0"
         logging.info(f"ACCES: {ip} | {request.method} {request.path} | User: '{auth.username}'")
-        return f(*args, **kwargs)
+        
+        resp = f(*args, **kwargs)
+        # On force la réponse à ne pas être cachée pour éviter les bugs Safari
+        if isinstance(resp, Response):
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+        return resp
     return decorated
 
 
