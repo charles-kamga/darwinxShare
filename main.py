@@ -310,7 +310,7 @@ class DarwinxApp(ctk.CTk):
                 if not hotspot_ips:
                     messagebox.showerror("Hotspot Inactif", 
                                        "Le Point d'Accès n'est pas détecté (IP en 10.x.x.x).\n\n"
-                                       "Veuillez l'activer dans vos paramètres système (Paramètres > Réseau > Point d'accès sans fil mobile) avant de lancer.")
+                                       "Veuillez activer le point d'accès de votre PC pour utiliser cette option.")
                     return
                 ip = get_hotspot_ip()
             else:
