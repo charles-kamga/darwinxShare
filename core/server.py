@@ -155,16 +155,72 @@ def requires_auth(f):
     return decorated
 
 
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def get_all_ips():
+    """Détecte toutes les adresses IPv4 locales du PC."""
+    ips = []
+    # Méthode Linux robuste (hostname -I)
     try:
-        s.connect(('8.8.8.8', 80))
-        IP = s.getsockname()[0]
-    except:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
+        import subprocess
+        out = subprocess.check_output(['hostname', '-I'], text=True)
+        ips = [ip.strip() for ip in out.split() if ip.strip()]
+    except: pass
+
+    # Méthode Socket standard (fallback)
+    if not ips:
+        try:
+            hostname = socket.gethostname()
+            # On récupère toutes les IPs liées au nom d'hôte
+            addr_info = socket.getaddrinfo(hostname, None)
+            for item in addr_info:
+                ip = item[4][0]
+                if '.' in ip and not ip.startswith('127.'):
+                    if ip not in ips: ips.append(ip)
+        except: pass
+    
+    # Dernier recours : connexion fictive
+    if not ips:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(('10.255.255.255', 1))
+            ips.append(s.getsockname()[0])
+        except:
+            ips.append('127.0.0.1')
+        finally:
+            s.close()
+    
+    return ips
+
+def get_best_ip():
+    """Choisit l'IP la plus probable (Priorité : Hotspot 10.x > WiFi 192.168.x > Autre)."""
+    ips = get_all_ips()
+    if not ips: return "127.0.0.1"
+    
+    # Tri par priorité
+    def priority(ip):
+        if ip.startswith("10.42."): return 1  # Hotspot Linux typique
+        if ip.startswith("10."): return 2     # Autre réseau 10.x
+        if ip.startswith("192.168."): return 3 # WiFi standard
+        if ip.startswith("172."): return 4    # Docker/VPN pro
+        return 5
+
+    ips.sort(key=priority)
+    return ips[0]
+
+def get_wifi_ip():
+    """Tente de récupérer spécifiquement une IP WiFi (192.168.x.x)."""
+    ips = get_all_ips()
+    wifi_ips = [ip for ip in ips if ip.startswith("192.168.")]
+    return wifi_ips[0] if wifi_ips else (ips[0] if ips else "127.0.0.1")
+
+def get_hotspot_ip():
+    """Tente de récupérer spécifiquement une IP Hotspot (10.x.x.x)."""
+    ips = get_all_ips()
+    hotspot_ips = [ip for ip in ips if ip.startswith("10.")]
+    return hotspot_ips[0] if hotspot_ips else (ips[0] if ips else "127.0.0.1")
+
+# On garde get_ip pour la compatibilité descendante
+def get_ip():
+    return get_best_ip()
 
 
 def safe_join(base, rel_path):
