@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=DarwinxShare
+Exec=darwinxshare
+Icon=darwinxshare
+Type=Application
+Categories=Utility;Network;
+Comment=Partage de fichiers ultra-rapide entre PC et Mobile
+Terminal=false
+StartupNotify=true

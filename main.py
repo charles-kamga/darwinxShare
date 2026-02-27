@@ -74,7 +74,7 @@ class DarwinxApp(ctk.CTk):
         except: pass
 
         ctk.CTkLabel(self.header_frame, text="DarwinxShare", font=("Roboto", 32, "bold"), text_color="#3B8ED0").pack(side="left")
-        ctk.CTkLabel(self.header_frame, text="v8.1 Pro", text_color="gray", font=("Arial", 12)).pack(side="left", padx=10, pady=(15, 0))
+        ctk.CTkLabel(self.header_frame, text="v1.8.2 Pro", text_color="gray", font=("Arial", 12)).pack(side="left", padx=10, pady=(15, 0))
 
         # --- INFO BUTTON ---
         self.btn_info = ctk.CTkButton(self.header_frame, text="ⓘ", width=35, height=35, 
@@ -282,7 +282,7 @@ class DarwinxApp(ctk.CTk):
 
     def show_instructions(self):
         msg = (
-            "📖 GUIDE D'UTILISATION :\n\n"
+            "📖 GUIDE D'UTILISATION (v1.8.2) :\n\n"
             "1. Onglet CONFIG : Choisissez votre dossier racine et vos identifiants.\n"
             "2. Mode WIFI : Utilisez-le si PC et iPhone sont sur la même BOX.\n"
             "3. Mode POINT D'ACCÈS : Utilisez-le si vous activez le Hotspot du PC.\n"
