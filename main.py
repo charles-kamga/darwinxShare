@@ -7,7 +7,7 @@ import qrcode
 from PIL import Image
 from werkzeug.serving import make_server
 from tkinter import filedialog, messagebox
-from core.server import app, SERVER_CONFIG, get_ip, resource_path, LOG_FILE
+from core.server import app, SERVER_CONFIG, get_ip, get_all_ips, get_wifi_ip, get_hotspot_ip, resource_path, LOG_FILE
 import logging
 
 # Silence Flask logs dans le terminal PC
@@ -74,7 +74,14 @@ class DarwinxApp(ctk.CTk):
         except: pass
 
         ctk.CTkLabel(self.header_frame, text="DarwinxShare", font=("Roboto", 32, "bold"), text_color="#3B8ED0").pack(side="left")
-        ctk.CTkLabel(self.header_frame, text="v8.1 Pro", text_color="gray", font=("Arial", 12)).pack(side="left", padx=10, pady=(15, 0))
+        ctk.CTkLabel(self.header_frame, text="v1.8.2 Pro", text_color="gray", font=("Arial", 12)).pack(side="left", padx=10, pady=(15, 0))
+
+        # --- INFO BUTTON ---
+        self.btn_info = ctk.CTkButton(self.header_frame, text="ⓘ", width=35, height=35, 
+                                      fg_color="transparent", text_color="gray", 
+                                      font=("Arial", 22), hover_color="#2C2C2E",
+                                      command=self.show_instructions)
+        self.btn_info.pack(side="right", pady=(10, 0))
 
         # --- TABS ---
         self.tabview = ctk.CTkTabview(self, width=540)
@@ -85,11 +92,20 @@ class DarwinxApp(ctk.CTk):
         self.tab_logs = self.tabview.add("📜 LOGS")
 
         # === DASHBOARD ===
-        self.btn_start = ctk.CTkButton(self.tab_home, text="ACTIVER LE PARTAGE",
+        self.btn_frame = ctk.CTkFrame(self.tab_home, fg_color="transparent")
+        self.btn_frame.pack(pady=20, padx=20, fill="x")
+        
+        self.btn_wifi = ctk.CTkButton(self.btn_frame, text="PARTAGE WIFI",
                                        fg_color="#27AE60", hover_color="#1E8449",
-                                       height=60, font=("Arial", 18, "bold"),
-                                       command=self.toggle_server)
-        self.btn_start.pack(pady=20, padx=20, fill="x")
+                                       height=60, font=("Arial", 16, "bold"),
+                                       command=lambda: self.toggle_server("wifi"))
+        self.btn_wifi.pack(side="left", padx=(0, 10), fill="x", expand=True)
+
+        self.btn_hotspot = ctk.CTkButton(self.btn_frame, text="POINT D'ACCÈS",
+                                       fg_color="#2980B9", hover_color="#2471A3",
+                                       height=60, font=("Arial", 16, "bold"),
+                                       command=lambda: self.toggle_server("hotspot"))
+        self.btn_hotspot.pack(side="left", fill="x", expand=True)
 
         self.info_frame = ctk.CTkFrame(self.tab_home)
         self.info_frame.pack(padx=20, pady=5, fill="x")
@@ -264,29 +280,74 @@ class DarwinxApp(ctk.CTk):
         self.btn_folder.configure(state="normal")
         for _, b in self.theme_buttons: b.configure(state="normal")
 
-    def toggle_server(self):
+    def show_instructions(self):
+        msg = (
+            "📖 GUIDE D'UTILISATION (v1.8.2) :\n\n"
+            "1. Onglet CONFIG : Choisissez votre dossier racine et vos identifiants.\n"
+            "2. Mode WIFI : Utilisez-le si PC et iPhone sont sur la même BOX.\n"
+            "3. Mode POINT D'ACCÈS : Utilisez-le si vous activez le Hotspot du PC.\n"
+            "4. SCAN : Scannez le QR Code qui apparaîtra.\n\n"
+            "⚠️ ATTENTION : Pour le mode Point d'accès, veillez à l'activer dans vos paramètres système AVANT de cliquer.\n\n"
+            "Par Charles Kamga pour la communauté linux !"
+            
+        )
+        messagebox.showinfo("Instructions DarwinxShare", msg)
+
+    def toggle_server(self, mode=None):
         if not self.server_active:
             SERVER_CONFIG["AUTH_USER"] = self.entry_user.get()
             SERVER_CONFIG["AUTH_PASS"] = self.entry_pass.get()
-            ip = get_ip()
+            
+            # Sélection de l'IP selon le mode
+            all_ips = get_all_ips()
+            if mode == "wifi":
+                wifi_ips = [ip for ip in all_ips if ip.startswith("192.168.")]
+                if not wifi_ips:
+                    messagebox.showwarning("WiFi non détecté", "Aucune interface WiFi (192.168.x.x) n'est active.\nVoulez-vous quand même tenter le démarrage ?")
+                ip = get_wifi_ip()
+            elif mode == "hotspot":
+                hotspot_ips = [ip for ip in all_ips if ip.startswith("10.")]
+                if not hotspot_ips:
+                    messagebox.showerror("Hotspot Inactif", 
+                                       "Le Point d'Accès n'est pas détecté (IP en 10.x.x.x).\n\n"
+                                       "Veuillez activer le point d'accès de votre PC pour utiliser cette option.")
+                    return
+                ip = get_hotspot_ip()
+            else:
+                ip = get_ip()
+                
             port = 8000
             try:
-                # Vérification UFW (Uncomplicated Firewall) sur Linux
+                # Vérification UFW
                 import subprocess
                 try:
                     ufw_check = subprocess.run(['ufw', 'status'], capture_output=True, text=True, timeout=1)
                     if "active" in ufw_check.stdout.lower():
-                        logging.warning("UFW est ACTIF. Si la connexion échoue sur iPhone, vérifiez que le port 8000 est ouvert.")
+                        logging.warning("UFW est ACTIF.")
                 except: pass
 
                 self.server_thread = ServerThread('0.0.0.0', port, self)
                 self.server_thread.start()
                 self.server_active = True
-                url = f"http={ip}:{port}" # Petite erreur corrigée ici aussi
+                
+                all_ips = get_all_ips()
+                logging.info(f"SERVEUR DEMARRÉ | Mode: {mode} | IP: {ip}")
+                
                 url = f"http://{ip}:{port}"
                 self.lbl_status.configure(text="SERVICE: ACTIF 🟢", text_color="#2ECC71")
                 self.lbl_link.configure(text=url)
-                self.btn_start.configure(text="ARRÊTER LE PARTAGE", fg_color="#C0392B", hover_color="#922B21")
+                
+                # Mise à jour des boutons
+                self.btn_wifi.configure(text="ARRÊTER (WIFI)", fg_color="#C0392B", hover_color="#922B21", state="normal")
+                self.btn_hotspot.configure(text="ARRÊTER (HOST)", fg_color="#C0392B", hover_color="#922B21", state="normal")
+                
+                # Désactiver l'autre bouton ? Non, on change les deux en "ARRÊTER"
+                # Mais pour être clair, on va désactiver celui qui n'a pas été cliqué
+                if mode == "wifi":
+                    self.btn_hotspot.configure(state="disabled")
+                else:
+                    self.btn_wifi.configure(state="disabled")
+
                 self.generate_qr_with_logo(url)
                 self._lock_ui()
             except Exception as e:
@@ -297,7 +358,11 @@ class DarwinxApp(ctk.CTk):
             self.server_thread = None
             self.lbl_status.configure(text="SERVICE: INACTIF 🔴", text_color="#E74C3C")
             self.lbl_link.configure(text="En attente...")
-            self.btn_start.configure(text="ACTIVER LE PARTAGE", fg_color="#27AE60", hover_color="#1E8449")
+            
+            # Reset des boutons
+            self.btn_wifi.configure(text="PARTAGE WIFI", fg_color="#27AE60", hover_color="#1E8449", state="normal")
+            self.btn_hotspot.configure(text="POINT D'ACCÈS", fg_color="#2980B9", hover_color="#2471A3", state="normal")
+            
             self.lbl_qr.pack_forget()
             self._unlock_ui()
 
@@ -309,5 +374,13 @@ class DarwinxApp(ctk.CTk):
 
 
 if __name__ == "__main__":
+    # Verrou d'instance unique (port 9999)
+    try:
+        lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lock_socket.bind(('127.0.0.1', 9999))
+    except socket.error:
+        print("[ERREUR] Une instance de DarwinxShare est déjà en cours d'exécution.")
+        sys.exit(1)
+
     app_ui = DarwinxApp()
     app_ui.mainloop()

@@ -1,0 +1,7 @@
+Package: darwinxshare
+Version: 1.8.2
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Charles Kamga
+Description: DarwinxShare Pro - Partage de fichiers PC/Mobile ultra-rapide (v1.8.2)
