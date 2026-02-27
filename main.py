@@ -40,7 +40,7 @@ class ServerThread(threading.Thread):
         if self.server:
             try:
                 self.server.shutdown()
-                self.server.server_close()
+                # On ne ferme pas le socket ici, le thread s'en chargera dans 'finally'
             except: pass
 
 
@@ -317,6 +317,16 @@ class DarwinxApp(ctk.CTk):
                 ip = get_ip()
                 
             port = 8000
+            # --- VÉRIFICATION PORT ---
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.bind(("0.0.0.0", port))
+                s.close()
+            except socket.error:
+                messagebox.showerror("Port Occupé", f"Le port {port} est déjà utilisé par une autre application.\nVeuillez l'arrêter ou patienter quelques secondes.")
+                return
+            # -------------------------
+
             try:
                 # Vérification UFW
                 import subprocess
@@ -353,7 +363,12 @@ class DarwinxApp(ctk.CTk):
             except Exception as e:
                 messagebox.showerror("Erreur", str(e))
         else:
-            threading.Thread(target=self.server_thread.shutdown, daemon=True).start()
+            # On demande l'arrêt
+            if self.server_thread:
+                self.server_thread.shutdown()
+                # On attend la fin effective du thread (max 2s) pour être propre
+                self.server_thread.join(timeout=2.0)
+                
             self.server_active = False
             self.server_thread = None
             self.lbl_status.configure(text="SERVICE: INACTIF 🔴", text_color="#E74C3C")
